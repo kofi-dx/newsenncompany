@@ -176,7 +176,7 @@ export default function ManagerArticles() {
     } catch (error) {
       console.error('❌ Error fetching articles:', error);
     } finally {
-      setLoading(false);
+      setLoading(false); 
     }
   };
 
