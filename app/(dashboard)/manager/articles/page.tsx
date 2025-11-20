@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// app/manager/articles/page.tsx
+// app/manager/articles/page.tsx (FIXED VERSION)
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -164,7 +164,7 @@ export default function ManagerArticles() {
       console.log('📝 Fetching all articles...');
       const articlesQuery = query(
         collection(db, 'articles'),
-        orderBy('createdAt', 'desc')
+        where("status", "==", "approved")
       );
 
       const snapshot = await getDocs(articlesQuery);
@@ -455,58 +455,58 @@ export default function ManagerArticles() {
   }
 
   return (
-    <div>
+    <div className="p-4">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Article Management</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Article Management</h1>
         <p className="text-gray-600 mt-2">Manage and monitor all articles from contributors</p>
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
-        <div className="bg-white p-4 rounded-lg border shadow-sm">
-          <div className="text-2xl font-bold text-gray-900">{statusCounts.total}</div>
-          <div className="text-sm text-gray-600">Total Articles</div>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+        <div className="bg-white p-3 rounded-lg border shadow-sm">
+          <div className="text-xl md:text-2xl font-bold text-gray-900">{statusCounts.total}</div>
+          <div className="text-xs md:text-sm text-gray-600">Total Articles</div>
         </div>
-        <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-          <div className="text-2xl font-bold text-green-600">{statusCounts.approved}</div>
-          <div className="text-sm text-green-700">Published</div>
+        <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+          <div className="text-xl md:text-2xl font-bold text-green-600">{statusCounts.approved}</div>
+          <div className="text-xs md:text-sm text-green-700">Published</div>
         </div>
-        <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-          <div className="text-2xl font-bold text-yellow-600">{statusCounts.pending}</div>
-          <div className="text-sm text-yellow-700">Pending</div>
+        <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+          <div className="text-xl md:text-2xl font-bold text-yellow-600">{statusCounts.pending}</div>
+          <div className="text-xs md:text-sm text-yellow-700">Pending</div>
         </div>
-        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-          <div className="text-2xl font-bold text-blue-600">{statusCounts.draft}</div>
-          <div className="text-sm text-blue-700">Draft</div>
+        <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+          <div className="text-xl md:text-2xl font-bold text-blue-600">{statusCounts.draft}</div>
+          <div className="text-xs md:text-sm text-blue-700">Draft</div>
         </div>
-        <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-          <div className="text-2xl font-bold text-purple-600">
+        <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
+          <div className="text-xl md:text-2xl font-bold text-purple-600">
             {articles.reduce((sum, article) => sum + (article.views || 0), 0).toLocaleString()}
           </div>
-          <div className="text-sm text-purple-700">Total Views</div>
+          <div className="text-xs md:text-sm text-purple-700">Total Views</div>
         </div>
-        <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-          <div className="text-2xl font-bold text-orange-600">
+        <div className="bg-orange-50 p-3 rounded-lg border border-orange-200">
+          <div className="text-xl md:text-2xl font-bold text-orange-600">
             {formatCurrency(articles.reduce((sum, article) => sum + (article.earnings || 0), 0))}
           </div>
-          <div className="text-sm text-orange-700">Total Earnings</div>
+          <div className="text-xs md:text-sm text-orange-700">Total Earnings</div>
         </div>
       </div>
 
       {/* Advanced Filters */}
-      <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
+      <div className="bg-white rounded-lg shadow-sm border p-4 md:p-6 mb-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Filters & Search</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           {/* Search */}
-          <div>
+          <div className="sm:col-span-2 lg:col-span-3 xl:col-span-1">
             <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
             <input
               type="text"
               placeholder="Search articles..."
               value={filters.search}
               onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900 placeholder-gray-500"
             />
           </div>
 
@@ -516,7 +516,7 @@ export default function ManagerArticles() {
             <select
               value={filters.status}
               onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900"
             >
               <option value="all">All Status</option>
               <option value="approved">Published</option>
@@ -533,7 +533,7 @@ export default function ManagerArticles() {
             <select
               value={filters.category}
               onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900"
             >
               <option value="all">All Categories</option>
               {categories.map(category => (
@@ -548,7 +548,7 @@ export default function ManagerArticles() {
             <select
               value={filters.author}
               onChange={(e) => setFilters(prev => ({ ...prev, author: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900"
             >
               <option value="all">All Authors</option>
               {contributors.map(contributor => (
@@ -565,7 +565,7 @@ export default function ManagerArticles() {
             <select
               value={filters.featured}
               onChange={(e) => setFilters(prev => ({ ...prev, featured: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900"
             >
               <option value="all">All Articles</option>
               <option value="featured">Featured Only</option>
@@ -582,7 +582,7 @@ export default function ManagerArticles() {
             <select
               value={filters.sortBy}
               onChange={(e) => setFilters(prev => ({ ...prev, sortBy: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900"
             >
               <option value="createdAt">Date Created</option>
               <option value="title">Title</option>
@@ -604,7 +604,7 @@ export default function ManagerArticles() {
                 ...prev, 
                 dateRange: { ...prev.dateRange, start: e.target.value } 
               }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900"
             />
           </div>
           <div>
@@ -616,7 +616,7 @@ export default function ManagerArticles() {
                 ...prev, 
                 dateRange: { ...prev.dateRange, end: e.target.value } 
               }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900"
             />
           </div>
         </div>
@@ -634,7 +634,7 @@ export default function ManagerArticles() {
               sortBy: 'createdAt',
               sortOrder: 'desc'
             })}
-            className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
+            className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 text-sm"
           >
             Clear All Filters
           </button>
@@ -660,7 +660,99 @@ export default function ManagerArticles() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full">
+            {/* Mobile Cards View */}
+            <div className="block md:hidden">
+              {currentArticles.map((article) => (
+                <div key={article.id} className="border-b p-4 hover:bg-gray-50">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-900 text-sm mb-1">
+                        {article.featured && <span className="text-yellow-500 mr-1">⭐</span>}
+                        {article.title}
+                      </div>
+                      <div className="text-xs text-gray-500 mb-2">
+                        By {article.username} • {formatDate(article.createdAt)}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(article.status)}`}>
+                      {getStatusDisplayName(article.status)}
+                    </span>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      {article.category}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 text-xs mb-3">
+                    <div className="text-center">
+                      <div className="font-semibold text-gray-900">{(article.views || 0).toLocaleString()}</div>
+                      <div className="text-gray-500">Views</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="font-semibold text-gray-900">{(article.likes || 0).toLocaleString()}</div>
+                      <div className="text-gray-500">Likes</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="font-semibold text-green-600">{formatCurrency(article.earnings || 0)}</div>
+                      <div className="text-gray-500">Earnings</div>
+                    </div>
+                  </div>
+
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => viewDetails(article)}
+                      className="flex-1 px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+                    >
+                      View
+                    </button>
+                    
+                    {article.status === 'pending' || article.status === 'submitted' ? (
+                      <>
+                        <button
+                          onClick={() => handleStatusUpdate(article.id, 'approved')}
+                          disabled={processing === article.id}
+                          className="flex-1 px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 disabled:opacity-50"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => {
+                            const reason = prompt('Reason for rejection:');
+                            if (reason) handleStatusUpdate(article.id, 'rejected', reason);
+                          }}
+                          disabled={processing === article.id}
+                          className="flex-1 px-2 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 disabled:opacity-50"
+                        >
+                          Reject
+                        </button>
+                      </>
+                    ) : article.status === 'approved' && (
+                      <>
+                        <button
+                          onClick={() => handleFeaturedToggle(article.id, article.featured || false)}
+                          disabled={processing === article.id}
+                          className="flex-1 px-2 py-1 bg-yellow-600 text-white rounded text-xs hover:bg-yellow-700 disabled:opacity-50"
+                        >
+                          {article.featured ? 'Unfeature' : 'Feature'}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteArticle(article.id)}
+                          disabled={processing === article.id}
+                          className="flex-1 px-2 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 disabled:opacity-50"
+                        >
+                          Delete
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table View */}
+            <table className="min-w-full hidden md:table">
               <thead>
                 <tr className="border-b bg-gray-50">
                   <th className="text-left p-4 font-semibold text-gray-700">Article</th>
@@ -722,7 +814,7 @@ export default function ManagerArticles() {
                       {formatDate(article.createdAt)}
                     </td>
                     <td className="p-4">
-                      <div className="flex space-x-2">
+                      <div className="flex flex-wrap gap-2">
                         <button
                           onClick={() => viewDetails(article)}
                           className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
@@ -779,16 +871,16 @@ export default function ManagerArticles() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex justify-between items-center p-4 border-t">
-            <div className="text-sm text-gray-600">
+          <div className="flex flex-col sm:flex-row justify-between items-center p-4 border-t gap-4">
+            <div className="text-sm text-gray-600 text-center sm:text-left">
               Page {currentPage} of {totalPages} • 
               Showing {indexOfFirstArticle + 1}-{Math.min(indexOfLastArticle, sortedArticles.length)} of {sortedArticles.length} articles
             </div>
-            <div className="flex space-x-2">
+            <div className="flex flex-wrap justify-center gap-2">
               <button
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:opacity-50"
+                className="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:opacity-50 text-gray-700"
               >
                 Previous
               </button>
@@ -815,7 +907,7 @@ export default function ManagerArticles() {
               <button
                 onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                 disabled={currentPage === totalPages}
-                className="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:opacity-50"
+                className="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:opacity-50 text-gray-700"
               >
                 Next
               </button>
@@ -826,11 +918,11 @@ export default function ManagerArticles() {
 
       {/* Article Details Modal */}
       {showDetails && selectedArticle && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">
+            <div className="p-4 sm:p-6">
+              <div className="flex justify-between items-center mb-4 sm:mb-6">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
                   {selectedArticle.title}
                 </h2>
                 <button
@@ -841,9 +933,9 @@ export default function ManagerArticles() {
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 {/* Article Information */}
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Article Information</h3>
                   <InfoRow label="Title" value={selectedArticle.title} />
                   <InfoRow label="Author" value={`${selectedArticle.username}`} />
@@ -866,7 +958,7 @@ export default function ManagerArticles() {
                 </div>
 
                 {/* Performance Metrics */}
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Performance Metrics</h3>
                   <InfoRow label="Views" value={selectedArticle.views.toLocaleString()} />
                   <InfoRow label="Likes" value={selectedArticle.likes.toLocaleString()} />
@@ -879,9 +971,9 @@ export default function ManagerArticles() {
               </div>
 
               {/* Content Preview */}
-              <div className="mt-6">
+              <div className="mt-4 sm:mt-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Content Preview</h3>
-                <div className="bg-gray-50 p-4 rounded-lg max-h-40 overflow-y-auto">
+                <div className="bg-gray-50 p-3 sm:p-4 rounded-lg max-h-40 overflow-y-auto">
                   <p className="text-gray-700 text-sm">
                     {selectedArticle.excerpt || selectedArticle.content.substring(0, 500) + '...'}
                   </p>
@@ -889,14 +981,14 @@ export default function ManagerArticles() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex justify-between mt-6 pt-6 border-t">
-                <div className="flex space-x-2">
+              <div className="flex flex-col sm:flex-row justify-between gap-3 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t">
+                <div className="flex flex-wrap gap-2">
                   {selectedArticle.status === 'pending' && (
                     <>
                       <button
                         onClick={() => handleStatusUpdate(selectedArticle.id, 'approved')}
                         disabled={processing === selectedArticle.id}
-                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 text-sm"
                       >
                         {processing === selectedArticle.id ? 'Publishing...' : 'Approve & Publish'}
                       </button>
@@ -906,7 +998,7 @@ export default function ManagerArticles() {
                           if (reason) handleStatusUpdate(selectedArticle.id, 'rejected', reason);
                         }}
                         disabled={processing === selectedArticle.id}
-                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 text-sm"
                       >
                         {processing === selectedArticle.id ? 'Rejecting...' : 'Reject'}
                       </button>
@@ -917,14 +1009,14 @@ export default function ManagerArticles() {
                       <button
                         onClick={() => handleFeaturedToggle(selectedArticle.id, selectedArticle.featured || false)}
                         disabled={processing === selectedArticle.id}
-                        className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:opacity-50"
+                        className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:opacity-50 text-sm"
                       >
                         {selectedArticle.featured ? 'Unfeature' : 'Feature'}
                       </button>
                       <button
                         onClick={() => handleDeleteArticle(selectedArticle.id)}
                         disabled={processing === selectedArticle.id}
-                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 text-sm"
                       >
                         Delete
                       </button>
@@ -933,7 +1025,7 @@ export default function ManagerArticles() {
                 </div>
                 <button
                   onClick={() => setShowDetails(false)}
-                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm"
                 >
                   Close
                 </button>
@@ -950,6 +1042,6 @@ export default function ManagerArticles() {
 const InfoRow = ({ label, value }: { label: string; value: string | React.ReactNode }) => (
   <div>
     <label className="text-sm font-medium text-gray-600">{label}</label>
-    <div className="text-gray-900 mt-1">{value || 'Not provided'}</div>
+    <div className="text-gray-900 mt-1 text-sm">{value || 'Not provided'}</div>
   </div>
 );
