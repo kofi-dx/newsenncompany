@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// app/manager/articles/page.tsx (FIXED VERSION)
+// app/manager/articles/page.tsx (RESPONSIVE VERSION)
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -87,6 +87,7 @@ export default function ManagerArticles() {
   const [contributors, setContributors] = useState<Contributor[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   
   // Filter state
   const [filters, setFilters] = useState<FilterState>({
@@ -102,11 +103,12 @@ export default function ManagerArticles() {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const articlesPerPage = 20;
+  const articlesPerPage = 12;
 
   // Selected article for details modal
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     fetchArticles();
@@ -307,8 +309,6 @@ export default function ManagerArticles() {
       if (selectedArticle?.id === articleId) {
         setShowDetails(false);
       }
-      
-      alert(`Article ${newStatus} successfully!`);
     } catch (error) {
       console.error('❌ Error updating article status:', error);
       alert('Error updating article status. Please try again.');
@@ -325,7 +325,6 @@ export default function ManagerArticles() {
         updatedAt: new Date()
       });
       await fetchArticles();
-      alert(`Article ${!featured ? 'featured' : 'unfeatured'} successfully!`);
     } catch (error) {
       console.error('❌ Error updating featured status:', error);
       alert('Error updating featured status. Please try again.');
@@ -346,7 +345,6 @@ export default function ManagerArticles() {
         updatedAt: new Date()
       });
       await fetchArticles();
-      alert('Article deleted successfully!');
     } catch (error) {
       console.error('❌ Error deleting article:', error);
       alert('Error deleting article. Please try again.');
@@ -364,14 +362,18 @@ export default function ManagerArticles() {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-      minimumFractionDigits: 2
+      minimumFractionDigits: 0
     }).format(amount || 0);
   };
 
   const formatDate = (timestamp: any) => {
     if (!timestamp?.toDate) return 'N/A';
     try {
-      return timestamp.toDate().toLocaleDateString();
+      return timestamp.toDate().toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
     } catch (error) {
       return 'Invalid Date';
     }
@@ -420,6 +422,18 @@ export default function ManagerArticles() {
     }
   };
 
+  const getStatusIcon = (status: Article['status']) => {
+    switch (status) {
+      case 'approved': return '✅';
+      case 'pending': 
+      case 'submitted': return '⏳';
+      case 'draft': return '📝';
+      case 'rejected': return '❌';
+      case 'deleted': return '🗑️';
+      default: return '📄';
+    }
+  };
+
   const getStatusCounts = () => {
     const counts = {
       approved: 0,
@@ -455,191 +469,233 @@ export default function ManagerArticles() {
   }
 
   return (
-    <div className="p-4">
+    <div className="px-2 sm:px-4 lg:px-0">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Article Management</h1>
-        <p className="text-gray-600 mt-2">Manage and monitor all articles from contributors</p>
+      <div className="mb-6 sm:mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Article Management</h1>
+            <p className="text-gray-600 mt-2 text-sm sm:text-base">
+              Manage and monitor all {articles.length} articles from contributors
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* View Mode Toggle */}
+            <div className="flex bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  viewMode === 'grid' 
+                    ? 'bg-white text-gray-900 shadow-sm' 
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Grid
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  viewMode === 'list' 
+                    ? 'bg-white text-gray-900 shadow-sm' 
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                List
+              </button>
+            </div>
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
+            >
+              {showFilters ? 'Hide Filters' : 'Show Filters'}
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-        <div className="bg-white p-3 rounded-lg border shadow-sm">
-          <div className="text-xl md:text-2xl font-bold text-gray-900">{statusCounts.total}</div>
-          <div className="text-xs md:text-sm text-gray-600">Total Articles</div>
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4 mb-6">
+        <div className="bg-white p-3 sm:p-4 rounded-lg border shadow-sm">
+          <div className="text-xl sm:text-2xl font-bold text-gray-900">{statusCounts.total}</div>
+          <div className="text-xs sm:text-sm text-gray-600">Total</div>
         </div>
-        <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-          <div className="text-xl md:text-2xl font-bold text-green-600">{statusCounts.approved}</div>
-          <div className="text-xs md:text-sm text-green-700">Published</div>
+        <div className="bg-green-50 p-3 sm:p-4 rounded-lg border border-green-200">
+          <div className="text-xl sm:text-2xl font-bold text-green-600">{statusCounts.approved}</div>
+          <div className="text-xs sm:text-sm text-green-700">Published</div>
         </div>
-        <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-          <div className="text-xl md:text-2xl font-bold text-yellow-600">{statusCounts.pending}</div>
-          <div className="text-xs md:text-sm text-yellow-700">Pending</div>
+        <div className="bg-yellow-50 p-3 sm:p-4 rounded-lg border border-yellow-200">
+          <div className="text-xl sm:text-2xl font-bold text-yellow-600">{statusCounts.pending}</div>
+          <div className="text-xs sm:text-sm text-yellow-700">Pending</div>
         </div>
-        <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-          <div className="text-xl md:text-2xl font-bold text-blue-600">{statusCounts.draft}</div>
-          <div className="text-xs md:text-sm text-blue-700">Draft</div>
+        <div className="bg-blue-50 p-3 sm:p-4 rounded-lg border border-blue-200">
+          <div className="text-xl sm:text-2xl font-bold text-blue-600">{statusCounts.draft}</div>
+          <div className="text-xs sm:text-sm text-blue-700">Draft</div>
         </div>
-        <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
-          <div className="text-xl md:text-2xl font-bold text-purple-600">
+        <div className="bg-purple-50 p-3 sm:p-4 rounded-lg border border-purple-200">
+          <div className="text-xl sm:text-2xl font-bold text-purple-600">
             {articles.reduce((sum, article) => sum + (article.views || 0), 0).toLocaleString()}
           </div>
-          <div className="text-xs md:text-sm text-purple-700">Total Views</div>
+          <div className="text-xs sm:text-sm text-purple-700">Total Views</div>
         </div>
-        <div className="bg-orange-50 p-3 rounded-lg border border-orange-200">
-          <div className="text-xl md:text-2xl font-bold text-orange-600">
+        <div className="bg-orange-50 p-3 sm:p-4 rounded-lg border border-orange-200">
+          <div className="text-xl sm:text-2xl font-bold text-orange-600">
             {formatCurrency(articles.reduce((sum, article) => sum + (article.earnings || 0), 0))}
           </div>
-          <div className="text-xs md:text-sm text-orange-700">Total Earnings</div>
+          <div className="text-xs sm:text-sm text-orange-700">Total Earnings</div>
         </div>
       </div>
 
       {/* Advanced Filters */}
-      <div className="bg-white rounded-lg shadow-sm border p-4 md:p-6 mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Filters & Search</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-          {/* Search */}
-          <div className="sm:col-span-2 lg:col-span-3 xl:col-span-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
-            <input
-              type="text"
-              placeholder="Search articles..."
-              value={filters.search}
-              onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900 placeholder-gray-500"
-            />
+      {showFilters && (
+        <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6 mb-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Filters & Search</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            {/* Search */}
+            <div className="sm:col-span-2 lg:col-span-3 xl:col-span-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Search Articles</label>
+              <input
+                type="text"
+                placeholder="Search by title, author, content..."
+                value={filters.search}
+                onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors text-gray-900 placeholder-gray-500"
+              />
+            </div>
+
+            {/* Status Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+              <select
+                value={filters.status}
+                onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors text-gray-900"
+              >
+                <option value="all">All Status</option>
+                <option value="approved">Published</option>
+                <option value="pending">Pending</option>
+                <option value="submitted">Submitted</option>
+                <option value="draft">Draft</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+
+            {/* Category Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+              <select
+                value={filters.category}
+                onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors text-gray-900"
+              >
+                <option value="all">All Categories</option>
+                {categories.map(category => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Author Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Author</label>
+              <select
+                value={filters.author}
+                onChange={(e) => setFilters(prev => ({ ...prev, author: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors text-gray-900"
+              >
+                <option value="all">All Authors</option>
+                {contributors.map(contributor => (
+                  <option key={contributor.id} value={contributor.id}>
+                    {contributor.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Featured Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Featured</label>
+              <select
+                value={filters.featured}
+                onChange={(e) => setFilters(prev => ({ ...prev, featured: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors text-gray-900"
+              >
+                <option value="all">All Articles</option>
+                <option value="featured">Featured Only</option>
+                <option value="not_featured">Not Featured</option>
+              </select>
+            </div>
           </div>
 
-          {/* Status Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-            <select
-              value={filters.status}
-              onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900"
-            >
-              <option value="all">All Status</option>
-              <option value="approved">Published</option>
-              <option value="pending">Pending</option>
-              <option value="submitted">Submitted</option>
-              <option value="draft">Draft</option>
-              <option value="rejected">Rejected</option>
-            </select>
+          {/* Second Row Filters */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+            {/* Sort By */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+              <select
+                value={filters.sortBy}
+                onChange={(e) => setFilters(prev => ({ ...prev, sortBy: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors text-gray-900"
+              >
+                <option value="createdAt">Date Created</option>
+                <option value="title">Title</option>
+                <option value="author">Author</option>
+                <option value="views">Views</option>
+                <option value="likes">Likes</option>
+                <option value="comments">Comments</option>
+                <option value="earnings">Earnings</option>
+              </select>
+            </div>
+
+            {/* Date Range */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+              <input
+                type="date"
+                value={filters.dateRange.start}
+                onChange={(e) => setFilters(prev => ({ 
+                  ...prev, 
+                  dateRange: { ...prev.dateRange, start: e.target.value } 
+                }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors text-gray-900"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+              <input
+                type="date"
+                value={filters.dateRange.end}
+                onChange={(e) => setFilters(prev => ({ 
+                  ...prev, 
+                  dateRange: { ...prev.dateRange, end: e.target.value } 
+                }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors text-gray-900"
+              />
+            </div>
           </div>
 
-          {/* Category Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-            <select
-              value={filters.category}
-              onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900"
+          {/* Clear Filters */}
+          <div className="flex justify-between items-center mt-4 pt-4 border-t">
+            <span className="text-sm text-gray-600">
+              Showing {filteredArticles.length} of {articles.length} articles
+            </span>
+            <button
+              onClick={() => setFilters({
+                search: '',
+                status: 'all',
+                category: 'all',
+                author: 'all',
+                featured: 'all',
+                dateRange: { start: '', end: '' },
+                sortBy: 'createdAt',
+                sortOrder: 'desc'
+              })}
+              className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors text-sm"
             >
-              <option value="all">All Categories</option>
-              {categories.map(category => (
-                <option key={category} value={category}>{category}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Author Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Author</label>
-            <select
-              value={filters.author}
-              onChange={(e) => setFilters(prev => ({ ...prev, author: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900"
-            >
-              <option value="all">All Authors</option>
-              {contributors.map(contributor => (
-                <option key={contributor.id} value={contributor.id}>
-                  {contributor.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Featured Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Featured</label>
-            <select
-              value={filters.featured}
-              onChange={(e) => setFilters(prev => ({ ...prev, featured: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900"
-            >
-              <option value="all">All Articles</option>
-              <option value="featured">Featured Only</option>
-              <option value="not_featured">Not Featured</option>
-            </select>
+              Clear All Filters
+            </button>
           </div>
         </div>
-
-        {/* Second Row Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-          {/* Sort By */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
-            <select
-              value={filters.sortBy}
-              onChange={(e) => setFilters(prev => ({ ...prev, sortBy: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900"
-            >
-              <option value="createdAt">Date Created</option>
-              <option value="title">Title</option>
-              <option value="author">Author</option>
-              <option value="views">Views</option>
-              <option value="likes">Likes</option>
-              <option value="comments">Comments</option>
-              <option value="earnings">Earnings</option>
-            </select>
-          </div>
-
-          {/* Date Range */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
-            <input
-              type="date"
-              value={filters.dateRange.start}
-              onChange={(e) => setFilters(prev => ({ 
-                ...prev, 
-                dateRange: { ...prev.dateRange, start: e.target.value } 
-              }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
-            <input
-              type="date"
-              value={filters.dateRange.end}
-              onChange={(e) => setFilters(prev => ({ 
-                ...prev, 
-                dateRange: { ...prev.dateRange, end: e.target.value } 
-              }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900"
-            />
-          </div>
-        </div>
-
-        {/* Clear Filters */}
-        <div className="flex justify-end mt-4">
-          <button
-            onClick={() => setFilters({
-              search: '',
-              status: 'all',
-              category: 'all',
-              author: 'all',
-              featured: 'all',
-              dateRange: { start: '', end: '' },
-              sortBy: 'createdAt',
-              sortOrder: 'desc'
-            })}
-            className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 text-sm"
-          >
-            Clear All Filters
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* Results Summary */}
       <div className="mb-4 text-sm text-gray-600">
@@ -649,216 +705,191 @@ export default function ManagerArticles() {
         {filters.category !== 'all' && ` in "${filters.category}"`}
       </div>
 
-      {/* Articles Table */}
-      <div className="bg-white rounded-lg shadow-sm border">
-        {sortedArticles.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
-            <div className="text-6xl mb-4">📝</div>
-            <p className="text-lg">
-              {articles.length === 0 ? 'No articles yet' : 'No articles match your filters'}
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            {/* Mobile Cards View */}
-            <div className="block md:hidden">
-              {currentArticles.map((article) => (
-                <div key={article.id} className="border-b p-4 hover:bg-gray-50">
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex-1">
-                      <div className="font-medium text-gray-900 text-sm mb-1">
-                        {article.featured && <span className="text-yellow-500 mr-1">⭐</span>}
-                        {article.title}
-                      </div>
-                      <div className="text-xs text-gray-500 mb-2">
-                        By {article.username} • {formatDate(article.createdAt)}
-                      </div>
+      {/* Articles Grid/List View */}
+      {sortedArticles.length === 0 ? (
+        <div className="bg-white rounded-lg shadow-sm border p-8 text-center text-gray-500">
+          <div className="text-6xl mb-4">📝</div>
+          <p className="text-lg font-medium">
+            {articles.length === 0 ? 'No articles yet' : 'No articles match your filters'}
+          </p>
+          <p className="text-sm mt-2">
+            {articles.length === 0 
+              ? 'Articles will appear here when contributors start publishing' 
+              : 'Try adjusting your search criteria or filters'
+            }
+          </p>
+        </div>
+      ) : viewMode === 'grid' ? (
+        // Grid View
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+          {currentArticles.map((article) => (
+            <div key={article.id} className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow">
+              <div className="p-4 sm:p-6">
+                {/* Header */}
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate" title={article.title}>
+                      {article.featured && <span className="text-yellow-500 mr-1">⭐</span>}
+                      {article.title}
+                    </h3>
+                    <div className="flex items-center text-xs text-gray-500 mt-1">
+                      <span>By {article.username}</span>
+                      <span className="mx-2">•</span>
+                      <span>{formatDate(article.createdAt)}</span>
                     </div>
-                  </div>
-                  
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(article.status)}`}>
-                      {getStatusDisplayName(article.status)}
-                    </span>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {article.category}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2 text-xs mb-3">
-                    <div className="text-center">
-                      <div className="font-semibold text-gray-900">{(article.views || 0).toLocaleString()}</div>
-                      <div className="text-gray-500">Views</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="font-semibold text-gray-900">{(article.likes || 0).toLocaleString()}</div>
-                      <div className="text-gray-500">Likes</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="font-semibold text-green-600">{formatCurrency(article.earnings || 0)}</div>
-                      <div className="text-gray-500">Earnings</div>
-                    </div>
-                  </div>
-
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => viewDetails(article)}
-                      className="flex-1 px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
-                    >
-                      View
-                    </button>
-                    
-                    {article.status === 'pending' || article.status === 'submitted' ? (
-                      <>
-                        <button
-                          onClick={() => handleStatusUpdate(article.id, 'approved')}
-                          disabled={processing === article.id}
-                          className="flex-1 px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 disabled:opacity-50"
-                        >
-                          Approve
-                        </button>
-                        <button
-                          onClick={() => {
-                            const reason = prompt('Reason for rejection:');
-                            if (reason) handleStatusUpdate(article.id, 'rejected', reason);
-                          }}
-                          disabled={processing === article.id}
-                          className="flex-1 px-2 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 disabled:opacity-50"
-                        >
-                          Reject
-                        </button>
-                      </>
-                    ) : article.status === 'approved' && (
-                      <>
-                        <button
-                          onClick={() => handleFeaturedToggle(article.id, article.featured || false)}
-                          disabled={processing === article.id}
-                          className="flex-1 px-2 py-1 bg-yellow-600 text-white rounded text-xs hover:bg-yellow-700 disabled:opacity-50"
-                        >
-                          {article.featured ? 'Unfeature' : 'Feature'}
-                        </button>
-                        <button
-                          onClick={() => handleDeleteArticle(article.id)}
-                          disabled={processing === article.id}
-                          className="flex-1 px-2 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 disabled:opacity-50"
-                        >
-                          Delete
-                        </button>
-                      </>
-                    )}
                   </div>
                 </div>
-              ))}
-            </div>
 
-            {/* Desktop Table View */}
-            <table className="min-w-full hidden md:table">
+                {/* Badges */}
+                <div className="flex flex-wrap gap-2 mb-3">
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(article.status)}`}>
+                    {getStatusIcon(article.status)} {getStatusDisplayName(article.status)}
+                  </span>
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    {article.category}
+                  </span>
+                  {article.safetyLevel && article.safetyLevel !== 'safe' && (
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getSafetyLevelColor(article.safetyLevel)}`}>
+                      {article.safetyLevel}
+                    </span>
+                  )}
+                </div>
+
+                {/* Excerpt */}
+                <div className="text-xs text-gray-600 mb-4 line-clamp-2">
+                  {article.excerpt || article.content.substring(0, 120) + '...'}
+                </div>
+
+                {/* Stats */}
+                <div className="grid grid-cols-4 gap-2 text-center mb-4">
+                  <div>
+                    <div className="font-semibold text-gray-900 text-sm">{(article.views || 0).toLocaleString()}</div>
+                    <div className="text-xs text-gray-500">Views</div>
+                  </div>
+                  <div>
+                    <div className="font-semibold text-gray-900 text-sm">{(article.likes || 0).toLocaleString()}</div>
+                    <div className="text-xs text-gray-500">Likes</div>
+                  </div>
+                  <div>
+                    <div className="font-semibold text-gray-900 text-sm">{(article.comments || 0).toLocaleString()}</div>
+                    <div className="text-xs text-gray-500">Comments</div>
+                  </div>
+                  <div>
+                    <div className="font-semibold text-green-600 text-sm">{formatCurrency(article.earnings || 0)}</div>
+                    <div className="text-xs text-gray-500">Earnings</div>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => viewDetails(article)}
+                    className="flex-1 px-3 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors"
+                  >
+                    View Details
+                  </button>
+                  
+                  {article.status === 'pending' || article.status === 'submitted' ? (
+                    <button
+                      onClick={() => handleStatusUpdate(article.id, 'approved')}
+                      disabled={processing === article.id}
+                      className="flex-1 px-3 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700 disabled:opacity-50 transition-colors"
+                    >
+                      {processing === article.id ? '...' : 'Approve'}
+                    </button>
+                  ) : article.status === 'approved' && (
+                    <button
+                      onClick={() => handleFeaturedToggle(article.id, article.featured || false)}
+                      disabled={processing === article.id}
+                      className="flex-1 px-3 py-2 bg-yellow-600 text-white rounded text-sm hover:bg-yellow-700 disabled:opacity-50 transition-colors"
+                    >
+                      {processing === article.id ? '...' : article.featured ? 'Unfeature' : 'Feature'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        // List View
+        <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
               <thead>
                 <tr className="border-b bg-gray-50">
                   <th className="text-left p-4 font-semibold text-gray-700">Article</th>
-                  <th className="text-left p-4 font-semibold text-gray-700">Author</th>
-                  <th className="text-left p-4 font-semibold text-gray-700">Category</th>
+                  <th className="text-left p-4 font-semibold text-gray-700 hidden lg:table-cell">Author</th>
+                  <th className="text-left p-4 font-semibold text-gray-700 hidden md:table-cell">Category</th>
                   <th className="text-left p-4 font-semibold text-gray-700">Status</th>
-                  <th className="text-left p-4 font-semibold text-gray-700">Views</th>
-                  <th className="text-left p-4 font-semibold text-gray-700">Likes</th>
-                  <th className="text-left p-4 font-semibold text-gray-700">Earnings</th>
-                  <th className="text-left p-4 font-semibold text-gray-700">Created</th>
+                  <th className="text-left p-4 font-semibold text-gray-700 hidden sm:table-cell">Views</th>
+                  <th className="text-left p-4 font-semibold text-gray-700 hidden xl:table-cell">Earnings</th>
                   <th className="text-left p-4 font-semibold text-gray-700">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {currentArticles.map((article) => (
-                  <tr key={article.id} className="border-b hover:bg-gray-50">
+                  <tr key={article.id} className="border-b hover:bg-gray-50 transition-colors">
                     <td className="p-4">
                       <div className="max-w-xs">
-                        <div className="font-medium text-gray-900 truncate" title={article.title}>
+                        <div className="font-medium text-gray-900 text-sm truncate" title={article.title}>
                           {article.featured && <span className="text-yellow-500 mr-1">⭐</span>}
                           {article.title}
                         </div>
-                        <div className="text-xs text-gray-500 mt-1 truncate">
+                        <div className="text-xs text-gray-500 mt-1 truncate lg:hidden">
+                          By {article.username} • {article.category}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1 truncate hidden lg:block">
                           {article.excerpt || 'No excerpt'}
                         </div>
                       </div>
                     </td>
-                    <td className="p-4">
-                      <div className="text-gray-900">{article.username}</div>
-                      <div className="text-xs text-gray-500">@{article.username}</div>
+                    <td className="p-4 hidden lg:table-cell">
+                      <div className="text-gray-900 text-sm">{article.username}</div>
                     </td>
-                    <td className="p-4">
+                    <td className="p-4 hidden md:table-cell">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                         {article.category}
                       </span>
                     </td>
                     <td className="p-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(article.status)}`}>
-                        {getStatusDisplayName(article.status)}
+                        {getStatusIcon(article.status)} <span className="hidden sm:inline ml-1">{getStatusDisplayName(article.status)}</span>
                       </span>
-                      {article.safetyLevel && article.safetyLevel !== 'safe' && (
-                        <span className={`ml-1 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${getSafetyLevelColor(article.safetyLevel)}`}>
-                          {article.safetyLevel}
-                        </span>
-                      )}
                     </td>
-                    <td className="p-4">
-                      <div className="text-gray-900 font-medium">{(article.views || 0).toLocaleString()}</div>
+                    <td className="p-4 hidden sm:table-cell">
+                      <div className="text-gray-900 font-medium text-sm">{(article.views || 0).toLocaleString()}</div>
                     </td>
-                    <td className="p-4">
-                      <div className="text-gray-900 font-medium">{(article.likes || 0).toLocaleString()}</div>
-                    </td>
-                    <td className="p-4">
-                      <div className="text-green-600 font-semibold">
+                    <td className="p-4 hidden xl:table-cell">
+                      <div className="text-green-600 font-semibold text-sm">
                         {formatCurrency(article.earnings || 0)}
                       </div>
-                    </td>
-                    <td className="p-4 text-gray-600 text-sm">
-                      {formatDate(article.createdAt)}
                     </td>
                     <td className="p-4">
                       <div className="flex flex-wrap gap-2">
                         <button
                           onClick={() => viewDetails(article)}
-                          className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                          className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors"
                         >
                           View
                         </button>
                         
                         {article.status === 'pending' || article.status === 'submitted' ? (
-                          <>
-                            <button
-                              onClick={() => handleStatusUpdate(article.id, 'approved')}
-                              disabled={processing === article.id}
-                              className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 disabled:opacity-50"
-                            >
-                              Approve
-                            </button>
-                            <button
-                              onClick={() => {
-                                const reason = prompt('Reason for rejection:');
-                                if (reason) handleStatusUpdate(article.id, 'rejected', reason);
-                              }}
-                              disabled={processing === article.id}
-                              className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 disabled:opacity-50"
-                            >
-                              Reject
-                            </button>
-                          </>
+                          <button
+                            onClick={() => handleStatusUpdate(article.id, 'approved')}
+                            disabled={processing === article.id}
+                            className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 disabled:opacity-50 transition-colors"
+                          >
+                            {processing === article.id ? '...' : 'Approve'}
+                          </button>
                         ) : article.status === 'approved' && (
-                          <>
-                            <button
-                              onClick={() => handleFeaturedToggle(article.id, article.featured || false)}
-                              disabled={processing === article.id}
-                              className="px-3 py-1 bg-yellow-600 text-white rounded text-sm hover:bg-yellow-700 disabled:opacity-50"
-                            >
-                              {article.featured ? 'Unfeature' : 'Feature'}
-                            </button>
-                            <button
-                              onClick={() => handleDeleteArticle(article.id)}
-                              disabled={processing === article.id}
-                              className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 disabled:opacity-50"
-                            >
-                              Delete
-                            </button>
-                          </>
+                          <button
+                            onClick={() => handleFeaturedToggle(article.id, article.featured || false)}
+                            disabled={processing === article.id}
+                            className="px-3 py-1 bg-yellow-600 text-white rounded text-sm hover:bg-yellow-700 disabled:opacity-50 transition-colors"
+                          >
+                            {processing === article.id ? '...' : article.featured ? 'Unfeature' : 'Feature'}
+                          </button>
                         )}
                       </div>
                     </td>
@@ -867,59 +898,59 @@ export default function ManagerArticles() {
               </tbody>
             </table>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex flex-col sm:flex-row justify-between items-center p-4 border-t gap-4">
-            <div className="text-sm text-gray-600 text-center sm:text-left">
-              Page {currentPage} of {totalPages} • 
-              Showing {indexOfFirstArticle + 1}-{Math.min(indexOfLastArticle, sortedArticles.length)} of {sortedArticles.length} articles
-            </div>
-            <div className="flex flex-wrap justify-center gap-2">
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:opacity-50 text-gray-700"
-              >
-                Previous
-              </button>
-              
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                const pageNumber = i + 1;
-                return (
-                  <button
-                    key={pageNumber}
-                    onClick={() => setCurrentPage(pageNumber)}
-                    className={`px-3 py-1 border text-sm rounded ${
-                      currentPage === pageNumber
-                        ? 'bg-green-600 text-white border-green-600'
-                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    {pageNumber}
-                  </button>
-                );
-              })}
-
-              {totalPages > 5 && <span className="px-2 py-1 text-sm text-gray-500">...</span>}
-
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                disabled={currentPage === totalPages}
-                className="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:opacity-50 text-gray-700"
-              >
-                Next
-              </button>
-            </div>
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row justify-between items-center p-4 border-t bg-white rounded-b-lg shadow-sm border gap-4 mt-4">
+          <div className="text-sm text-gray-600 text-center sm:text-left">
+            Page {currentPage} of {totalPages} • 
+            Showing {indexOfFirstArticle + 1}-{Math.min(indexOfLastArticle, sortedArticles.length)} of {sortedArticles.length} articles
           </div>
-        )}
-      </div>
+          <div className="flex flex-wrap justify-center gap-2">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:opacity-50 transition-colors text-gray-700"
+            >
+              Previous
+            </button>
+            
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              const pageNumber = i + 1;
+              return (
+                <button
+                  key={pageNumber}
+                  onClick={() => setCurrentPage(pageNumber)}
+                  className={`px-3 py-2 border text-sm rounded transition-colors ${
+                    currentPage === pageNumber
+                      ? 'bg-green-600 text-white border-green-600'
+                      : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  {pageNumber}
+                </button>
+              );
+            })}
+
+            {totalPages > 5 && <span className="px-2 py-2 text-sm text-gray-500">...</span>}
+
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:opacity-50 transition-colors text-gray-700"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Article Details Modal */}
       {showDetails && selectedArticle && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[95vh] overflow-y-auto">
             <div className="p-4 sm:p-6">
               <div className="flex justify-between items-center mb-4 sm:mb-6">
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
@@ -927,7 +958,7 @@ export default function ManagerArticles() {
                 </h2>
                 <button
                   onClick={() => setShowDetails(false)}
-                  className="text-gray-500 hover:text-gray-700 text-2xl"
+                  className="text-gray-500 hover:text-gray-700 text-2xl transition-colors"
                 >
                   ✕
                 </button>
@@ -942,7 +973,7 @@ export default function ManagerArticles() {
                   <InfoRow label="Category" value={selectedArticle.category} />
                   <InfoRow label="Status" value={
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(selectedArticle.status)}`}>
-                      {getStatusDisplayName(selectedArticle.status)}
+                      {getStatusIcon(selectedArticle.status)} {getStatusDisplayName(selectedArticle.status)}
                     </span>
                   } />
                   <InfoRow label="Safety Level" value={
@@ -988,7 +1019,7 @@ export default function ManagerArticles() {
                       <button
                         onClick={() => handleStatusUpdate(selectedArticle.id, 'approved')}
                         disabled={processing === selectedArticle.id}
-                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 text-sm"
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors text-sm"
                       >
                         {processing === selectedArticle.id ? 'Publishing...' : 'Approve & Publish'}
                       </button>
@@ -998,7 +1029,7 @@ export default function ManagerArticles() {
                           if (reason) handleStatusUpdate(selectedArticle.id, 'rejected', reason);
                         }}
                         disabled={processing === selectedArticle.id}
-                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 text-sm"
+                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors text-sm"
                       >
                         {processing === selectedArticle.id ? 'Rejecting...' : 'Reject'}
                       </button>
@@ -1009,14 +1040,14 @@ export default function ManagerArticles() {
                       <button
                         onClick={() => handleFeaturedToggle(selectedArticle.id, selectedArticle.featured || false)}
                         disabled={processing === selectedArticle.id}
-                        className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:opacity-50 text-sm"
+                        className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:opacity-50 transition-colors text-sm"
                       >
                         {selectedArticle.featured ? 'Unfeature' : 'Feature'}
                       </button>
                       <button
                         onClick={() => handleDeleteArticle(selectedArticle.id)}
                         disabled={processing === selectedArticle.id}
-                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 text-sm"
+                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors text-sm"
                       >
                         Delete
                       </button>
@@ -1025,7 +1056,7 @@ export default function ManagerArticles() {
                 </div>
                 <button
                   onClick={() => setShowDetails(false)}
-                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm"
+                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
                 >
                   Close
                 </button>

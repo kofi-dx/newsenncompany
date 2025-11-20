@@ -1,15 +1,17 @@
-// app/manager/layout.tsx (Updated with better debugging)
+// app/manager/layout.tsx (Updated with responsive design and active nav)
 'use client';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
 export default function ManagerLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const [debugInfo, setDebugInfo] = useState('');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     console.log('🔄 ManagerLayout - Auth state:', { 
@@ -36,6 +38,24 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
       }
     }
   }, [user, loading, router]);
+
+  // Navigation items with their paths
+  const navItems = [
+    { href: '/manager', label: '📊 Dashboard', icon: '📊' },
+    { href: '/manager/create-employee', label: '👥 Create Employee', icon: '👥' },
+    { href: '/manager/team', label: '📋 My Team', icon: '📋' },
+    { href: '/manager/contributors', label: '📋 Contributors', icon: '📋' },
+    { href: '/manager/articles', label: '📋 Articles', icon: '📋' },
+    { href: '/manager/performance', label: '📈 Performance', icon: '📈' },
+  ];
+
+  // Check if a nav item is active
+  const isActive = (href: string) => {
+    if (href === '/manager') {
+      return pathname === '/manager';
+    }
+    return pathname.startsWith(href);
+  };
 
   if (loading) {
     return (
@@ -80,11 +100,12 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
               </div>
               <div className="ml-4">
                 <h1 className="text-xl font-bold text-gray-900">Manager Dashboard</h1>
-                <p className="text-sm text-gray-600">Team Management</p>
+                <p className="text-sm text-gray-600 hidden sm:block">Team Management</p>
               </div>
             </div>
             
-            <div className="flex items-center space-x-4">
+            {/* Desktop Navigation and User Info */}
+            <div className="hidden md:flex items-center space-x-4">
               <span className="text-sm text-gray-700">Welcome, {user.name}</span>
               <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
                 Manager
@@ -99,56 +120,79 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
                 Logout
               </button>
             </div>
+
+            {/* Mobile menu button */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+            >
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
           </div>
         </div>
+
+        {/* Mobile Navigation Menu */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden bg-white border-t">
+            <div className="px-2 pt-2 pb-3 space-y-1">
+              {navItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`block px-3 py-2 rounded-md text-base font-medium ${
+                    isActive(item.href)
+                      ? 'bg-green-50 text-green-600 border-r-2 border-green-600'
+                      : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              ))}
+              <div className="border-t pt-3 mt-3">
+                <div className="px-3 py-2 text-sm text-gray-700">
+                  Welcome, {user.name}
+                </div>
+                <button
+                  onClick={() => {
+                    console.log('Logging out manager...');
+                    router.push('/login');
+                  }}
+                  className="w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-600 hover:bg-red-50"
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Manager Sidebar and Main Content */}
-      <div className="flex">
-        {/* Sidebar */}
-        <div className="w-64 bg-white min-h-screen shadow-sm">
+      <div className="flex flex-col md:flex-row">
+        {/* Sidebar - Hidden on mobile, shown on desktop */}
+        <div className="hidden md:block w-64 bg-white min-h-screen shadow-sm">
           <nav className="mt-8">
-            <Link 
-              href="/manager" 
-              className="block px-6 py-3 text-gray-700 hover:bg-green-50 hover:text-green-600 border-r-2 border-green-600 bg-green-50"
-            >
-              📊 Dashboard
-            </Link>
-            <Link 
-              href="/manager/create-employee" 
-              className="block px-6 py-3 text-gray-700 hover:bg-green-50 hover:text-green-600"
-            >
-              👥 Create Employee
-            </Link>
-            <Link 
-              href="/manager/team" 
-              className="block px-6 py-3 text-gray-700 hover:bg-green-50 hover:text-green-600"
-            >
-              📋  My Team
-            </Link>
-            <Link 
-              href="/manager/contributors" 
-              className="block px-6 py-3 text-gray-700 hover:bg-green-50 hover:text-green-600"
-            >
-              📋 Contributors
-            </Link>
-            <Link 
-              href="/manager/articles" 
-              className="block px-6 py-3 text-gray-700 hover:bg-green-50 hover:text-green-600"
-            >
-              📋 Articles
-            </Link>
-            <Link 
-              href="/manager/performance" 
-              className="block px-6 py-3 text-gray-700 hover:bg-green-50 hover:text-green-600"
-            >
-              📈 Performance
-            </Link>
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`block px-6 py-3 text-gray-700 hover:bg-green-50 hover:text-green-600 border-r-2 transition-colors ${
+                  isActive(item.href)
+                    ? 'border-green-600 bg-green-50 text-green-600'
+                    : 'border-transparent'
+                }`}
+              >
+                {item.label}
+              </Link>
+            ))}
           </nav>
         </div>
 
         {/* Main Content */}
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-4 md:p-6 w-full">
           {children}
         </main>
       </div>

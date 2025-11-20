@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// app/manager/contributors/page.tsx (FIXED VERSION)
+// app/manager/contributors/page.tsx (RESPONSIVE VERSION)
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -51,6 +51,7 @@ export default function ManagerContributors() {
   const [showDetails, setShowDetails] = useState(false);
   const [updating, setUpdating] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   useEffect(() => {
     fetchContributorsData();
@@ -71,7 +72,6 @@ export default function ManagerContributors() {
         collection(db, 'articles'),
         where('status', '==', 'approved'),
         orderBy('publishedAt', 'desc'),
-        // limit(10)
       );
       const articlesSnapshot = await getDocs(articlesQuery);
       const articlesData = articlesSnapshot.docs.map(doc => ({
@@ -98,7 +98,6 @@ export default function ManagerContributors() {
       
       await fetchContributorsData();
       setShowDetails(false);
-      alert('Contributor status updated successfully!');
     } catch (error) {
       console.error('Error updating contributor status:', error);
       alert('Error updating contributor status. Please try again.');
@@ -131,13 +130,17 @@ export default function ManagerContributors() {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-      minimumFractionDigits: 2
+      minimumFractionDigits: 0
     }).format(amount);
   };
 
   const formatDate = (timestamp: any) => {
     if (!timestamp) return 'Never';
-    return timestamp.toDate().toLocaleDateString();
+    return timestamp.toDate().toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
   };
 
   const formatLastActive = (lastActive: any) => {
@@ -159,21 +162,41 @@ export default function ManagerContributors() {
 
   const getStatusColor = (status: Contributor['status']) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'inactive': return 'bg-gray-100 text-gray-800';
-      case 'suspended': return 'bg-red-100 text-red-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'active': return 'bg-green-100 text-green-800 border-green-200';
+      case 'inactive': return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'suspended': return 'bg-red-100 text-red-800 border-red-200';
+      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getStatusIcon = (status: Contributor['status']) => {
+    switch (status) {
+      case 'active': return '🟢';
+      case 'inactive': return '⚪';
+      case 'suspended': return '🔴';
+      case 'pending': return '🟡';
+      default: return '⚪';
     }
   };
 
   const getLevelColor = (level?: string) => {
     switch (level) {
-      case 'expert': return 'bg-purple-100 text-purple-800';
-      case 'advanced': return 'bg-blue-100 text-blue-800';
-      case 'intermediate': return 'bg-green-100 text-green-800';
-      case 'beginner': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'expert': return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'advanced': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'intermediate': return 'bg-green-100 text-green-800 border-green-200';
+      case 'beginner': return 'bg-gray-100 text-gray-800 border-gray-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getLevelIcon = (level?: string) => {
+    switch (level) {
+      case 'expert': return '🏆';
+      case 'advanced': return '⭐';
+      case 'intermediate': return '📈';
+      case 'beginner': return '🌱';
+      default: return '📝';
     }
   };
 
@@ -211,6 +234,10 @@ export default function ManagerContributors() {
       .slice(0, 5);
   };
 
+  const getContributorInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
   const statusCounts = getStatusCounts();
   const earningsStats = getEarningsStats();
 
@@ -224,52 +251,83 @@ export default function ManagerContributors() {
   }
 
   return (
-    <div>
+    <div className="px-2 sm:px-4 lg:px-0">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Contributor Management</h1>
-        <p className="text-gray-600 mt-2">Monitor and manage content contributors</p>
+      <div className="mb-6 sm:mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Contributor Management</h1>
+            <p className="text-gray-600 mt-2 text-sm sm:text-base">
+              Monitor and manage {contributors.length} content contributor{contributors.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* View Mode Toggle */}
+            <div className="flex bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  viewMode === 'grid' 
+                    ? 'bg-white text-gray-900 shadow-sm' 
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Grid
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  viewMode === 'list' 
+                    ? 'bg-white text-gray-900 shadow-sm' 
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                List
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-        <div className="bg-white p-4 rounded-lg border shadow-sm">
-          <div className="text-2xl font-bold text-gray-900">{statusCounts.total}</div>
-          <div className="text-sm text-gray-600">Total Contributors</div>
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
+        <div className="bg-white p-3 sm:p-4 rounded-lg border shadow-sm">
+          <div className="text-xl sm:text-2xl font-bold text-gray-900">{statusCounts.total}</div>
+          <div className="text-xs sm:text-sm text-gray-600">Total</div>
         </div>
-        <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-          <div className="text-2xl font-bold text-green-600">{statusCounts.active}</div>
-          <div className="text-sm text-green-700">Active</div>
+        <div className="bg-green-50 p-3 sm:p-4 rounded-lg border border-green-200">
+          <div className="text-xl sm:text-2xl font-bold text-green-600">{statusCounts.active}</div>
+          <div className="text-xs sm:text-sm text-green-700">Active</div>
         </div>
-        <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-          <div className="text-2xl font-bold text-purple-600">
+        <div className="bg-purple-50 p-3 sm:p-4 rounded-lg border border-purple-200">
+          <div className="text-xl sm:text-2xl font-bold text-purple-600">
             {formatCurrency(earningsStats.totalEarnings)}
           </div>
-          <div className="text-sm text-purple-700">Total Earnings</div>
+          <div className="text-xs sm:text-sm text-purple-700">Total Earnings</div>
         </div>
-        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-          <div className="text-2xl font-bold text-blue-600">
+        <div className="bg-blue-50 p-3 sm:p-4 rounded-lg border border-blue-200">
+          <div className="text-xl sm:text-2xl font-bold text-blue-600">
             {contributors.reduce((sum, contrib) => sum + (contrib.articlesCount || 0), 0)}
           </div>
-          <div className="text-sm text-blue-700">Total Articles</div>
+          <div className="text-xs sm:text-sm text-blue-700">Total Articles</div>
         </div>
-        <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-          <div className="text-2xl font-bold text-orange-600">
+        <div className="bg-orange-50 p-3 sm:p-4 rounded-lg border border-orange-200">
+          <div className="text-xl sm:text-2xl font-bold text-orange-600">
             {formatCurrency(earningsStats.averageEarnings)}
           </div>
-          <div className="text-sm text-orange-700">Avg Earnings</div>
+          <div className="text-xs sm:text-sm text-orange-700">Avg Earnings</div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-lg shadow-sm border mb-6">
+      <div className="bg-white rounded-lg shadow-sm border mb-6 overflow-x-auto">
         <div className="border-b">
-          <nav className="flex -mb-px">
+          <nav className="flex -mb-px min-w-max">
             {['overview', 'performance', 'payouts'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`py-4 px-6 text-sm font-medium border-b-2 ${
+                className={`py-4 px-4 sm:px-6 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === tab
                     ? 'border-green-500 text-green-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -283,16 +341,16 @@ export default function ManagerContributors() {
       </div>
 
       {/* Filters and Search */}
-      <div className="bg-white rounded-lg shadow-sm border p-4 mb-6">
+      <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Search Contributors</label>
             <input
               type="text"
-              placeholder="Search contributors..."
+              placeholder="Search by name, email, specialization..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900 placeholder-gray-500" // ADDED: text-gray-900 placeholder-gray-500
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors text-gray-900 placeholder-gray-500"
             />
           </div>
           <div>
@@ -300,7 +358,7 @@ export default function ManagerContributors() {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900" // ADDED: text-gray-900
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors text-gray-900"
             >
               <option value="all">All Status</option>
               <option value="active">Active</option>
@@ -314,7 +372,7 @@ export default function ManagerContributors() {
             <select
               value={filterLevel}
               onChange={(e) => setFilterLevel(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900" // ADDED: text-gray-900
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors text-gray-900"
             >
               <option value="all">All Levels</option>
               <option value="beginner">Beginner</option>
@@ -323,39 +381,50 @@ export default function ManagerContributors() {
               <option value="expert">Expert</option>
             </select>
           </div>
-          <div className="flex items-end">
-            <button
-              onClick={() => {
-                setSearchTerm('');
-                setFilterStatus('all');
-                setFilterLevel('all');
-              }}
-              className="w-full bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
-            >
-              Clear Filters
-            </button>
-          </div>
+        </div>
+        <div className="flex justify-between items-center mt-4 pt-4 border-t">
+          <span className="text-sm text-gray-600">
+            Showing {filteredContributors.length} of {contributors.length} contributors
+          </span>
+          <button
+            onClick={() => {
+              setSearchTerm('');
+              setFilterStatus('all');
+              setFilterLevel('all');
+            }}
+            className="text-gray-600 hover:text-gray-800 text-sm font-medium transition-colors"
+          >
+            Clear Filters
+          </button>
         </div>
       </div>
 
       {/* Contributor Details Modal */}
       {showDetails && selectedContributor && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[95vh] overflow-y-auto">
+            <div className="p-4 sm:p-6">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  {selectedContributor.name}
-                </h2>
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                    {getContributorInitials(selectedContributor.name)}
+                  </div>
+                  <div className="ml-4">
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+                      {selectedContributor.name}
+                    </h2>
+                    <p className="text-gray-600">{selectedContributor.email}</p>
+                  </div>
+                </div>
                 <button
                   onClick={() => setShowDetails(false)}
-                  className="text-gray-500 hover:text-gray-700 text-2xl"
+                  className="text-gray-500 hover:text-gray-700 text-2xl transition-colors"
                 >
                   ✕
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Basic Information */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Basic Information</h3>
@@ -367,7 +436,7 @@ export default function ManagerContributors() {
                       <label className="text-sm font-medium text-gray-600">Status</label>
                       <div className="mt-1">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(selectedContributor.status)}`}>
-                          {selectedContributor.status}
+                          {getStatusIcon(selectedContributor.status)} {selectedContributor.status}
                         </span>
                       </div>
                     </div>
@@ -375,7 +444,7 @@ export default function ManagerContributors() {
                       <label className="text-sm font-medium text-gray-600">Level</label>
                       <div className="mt-1">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getLevelColor(selectedContributor.level)}`}>
-                          {selectedContributor.level || 'Not set'}
+                          {getLevelIcon(selectedContributor.level)} {selectedContributor.level || 'Not set'}
                         </span>
                       </div>
                     </div>
@@ -418,25 +487,30 @@ export default function ManagerContributors() {
                     )}
                   </div>
                 </div>
+              </div>
 
-                {/* Recent Articles */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Recent Articles</h3>
-                  <div className="space-y-2 max-h-60 overflow-y-auto">
-                    {getRecentPerformance(selectedContributor.id).length > 0 ? (
-                      getRecentPerformance(selectedContributor.id).map(article => (
-                        <div key={article.id} className="p-2 border rounded-lg">
-                          <div className="font-medium text-sm text-gray-900 truncate">{article.title}</div>
-                          <div className="flex justify-between text-xs text-gray-500 mt-1">
-                            <span>{article.views} views</span>
-                            <span className="text-green-600">{formatCurrency(article.earnings)}</span>
-                          </div>
+              {/* Recent Articles */}
+              <div className="mt-6 space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Recent Articles</h3>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {getRecentPerformance(selectedContributor.id).length > 0 ? (
+                    getRecentPerformance(selectedContributor.id).map(article => (
+                      <div key={article.id} className="p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                        <div className="font-medium text-sm text-gray-900 truncate">{article.title}</div>
+                        <div className="flex flex-wrap gap-2 sm:gap-4 text-xs text-gray-500 mt-1">
+                          <span>{article.views} views</span>
+                          <span className="text-green-600 font-medium">{formatCurrency(article.earnings)}</span>
+                          {article.category && (
+                            <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                              {article.category}
+                            </span>
+                          )}
                         </div>
-                      ))
-                    ) : (
-                      <p className="text-sm text-gray-500 text-center py-4">No recent articles</p>
-                    )}
-                  </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-gray-500 text-center py-4">No recent articles</p>
+                  )}
                 </div>
               </div>
 
@@ -449,11 +523,11 @@ export default function ManagerContributors() {
                       key={status}
                       onClick={() => handleStatusUpdate(selectedContributor.id, status as Contributor['status'])}
                       disabled={updating === selectedContributor.id || selectedContributor.status === status}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                         selectedContributor.status === status
                           ? 'bg-green-600 text-white'
                           : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                      } disabled:opacity-50`}
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
                       {updating === selectedContributor.id ? 'Updating...' : `Set ${status}`}
                     </button>
@@ -464,7 +538,7 @@ export default function ManagerContributors() {
               <div className="flex justify-end mt-6 pt-6 border-t">
                 <button
                   onClick={() => setShowDetails(false)}
-                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   Close
                 </button>
@@ -474,85 +548,170 @@ export default function ManagerContributors() {
         </div>
       )}
 
-      {/* Contributors Table */}
-      <div className="bg-white rounded-lg shadow-sm border">
-        {filteredContributors.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
-            <div className="text-6xl mb-4">✍️</div>
-            <p className="text-lg">
-              {contributors.length === 0 ? 'No contributors yet' : 'No contributors match your filters'}
-            </p>
-            <p className="text-sm mt-2">
-              {contributors.length === 0 
-                ? 'Contributors will appear here when they join the platform' 
-                : 'Try adjusting your search or filters'
-              }
-            </p>
-          </div>
-        ) : (
+      {/* Contributors Grid/List View */}
+      {filteredContributors.length === 0 ? (
+        <div className="bg-white rounded-lg shadow-sm border p-8 text-center text-gray-500">
+          <div className="text-6xl mb-4">✍️</div>
+          <p className="text-lg font-medium">
+            {contributors.length === 0 ? 'No contributors yet' : 'No contributors match your filters'}
+          </p>
+          <p className="text-sm mt-2">
+            {contributors.length === 0 
+              ? 'Contributors will appear here when they join the platform' 
+              : 'Try adjusting your search or filters'
+            }
+          </p>
+        </div>
+      ) : viewMode === 'grid' ? (
+        // Grid View
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+          {filteredContributors.map((contributor) => (
+            <div key={contributor.id} className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow">
+              <div className="p-4 sm:p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center">
+                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center text-white font-bold">
+                      {getContributorInitials(contributor.name)}
+                    </div>
+                    <div className="ml-3">
+                      <h3 className="font-semibold text-gray-900 truncate">
+                        {contributor.name}
+                      </h3>
+                      <p className="text-sm text-gray-600 truncate">{contributor.email}</p>
+                    </div>
+                  </div>
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(contributor.status)}`}>
+                    {getStatusIcon(contributor.status)}
+                  </span>
+                </div>
+                
+                <div className="space-y-2 text-sm text-gray-600 mb-4">
+                  <div className="flex items-center justify-between">
+                    <span>Level:</span>
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getLevelColor(contributor.level)}`}>
+                      {getLevelIcon(contributor.level)} {contributor.level || 'Not set'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Articles:</span>
+                    <span className="font-medium text-gray-900">{contributor.articlesCount || 0}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Total Earnings:</span>
+                    <span className="font-semibold text-green-600">
+                      {formatCurrency(contributor.totalEarnings || 0)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Balance:</span>
+                    <span className="font-medium text-blue-600">
+                      {formatCurrency(contributor.balance || 0)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Last Active:</span>
+                    <span className="text-gray-500 text-xs">{formatLastActive(contributor.lastActive)}</span>
+                  </div>
+                </div>
+
+                {contributor.specialization && contributor.specialization.length > 0 && (
+                  <div className="mb-4">
+                    <div className="flex flex-wrap gap-1">
+                      {contributor.specialization.slice(0, 3).map(spec => (
+                        <span key={spec} className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                          {spec}
+                        </span>
+                      ))}
+                      {contributor.specialization.length > 3 && (
+                        <span className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded">
+                          +{contributor.specialization.length - 3}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex space-x-2 pt-4 border-t">
+                  <button
+                    onClick={() => viewDetails(contributor)}
+                    className="flex-1 bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 transition-colors"
+                  >
+                    View Details
+                  </button>
+                  <button
+                    onClick={() => handleStatusUpdate(
+                      contributor.id, 
+                      contributor.status === 'active' ? 'inactive' : 'active'
+                    )}
+                    disabled={updating === contributor.id}
+                    className="flex-1 bg-green-600 text-white px-3 py-2 rounded text-sm hover:bg-green-700 disabled:opacity-50 transition-colors"
+                  >
+                    {updating === contributor.id ? '...' : contributor.status === 'active' ? 'Deactivate' : 'Activate'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        // List View
+        <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead>
                 <tr className="border-b bg-gray-50">
                   <th className="text-left p-4 font-semibold text-gray-700">Contributor</th>
-                  <th className="text-left p-4 font-semibold text-gray-700">Level</th>
+                  <th className="text-left p-4 font-semibold text-gray-700 hidden lg:table-cell">Level</th>
                   <th className="text-left p-4 font-semibold text-gray-700">Articles</th>
-                  <th className="text-left p-4 font-semibold text-gray-700">Total Earnings</th>
-                  <th className="text-left p-4 font-semibold text-gray-700">Balance</th>
+                  <th className="text-left p-4 font-semibold text-gray-700 hidden md:table-cell">Total Earnings</th>
                   <th className="text-left p-4 font-semibold text-gray-700">Status</th>
-                  <th className="text-left p-4 font-semibold text-gray-700">Last Active</th>
+                  <th className="text-left p-4 font-semibold text-gray-700 hidden sm:table-cell">Last Active</th>
                   <th className="text-left p-4 font-semibold text-gray-700">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredContributors.map((contributor) => (
-                  <tr key={contributor.id} className="border-b hover:bg-gray-50">
+                  <tr key={contributor.id} className="border-b hover:bg-gray-50 transition-colors">
                     <td className="p-4">
-                      <div>
-                        <div className="font-medium text-gray-900">
-                          {contributor.name}
+                      <div className="flex items-center">
+                        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center text-white font-bold text-sm mr-3">
+                          {getContributorInitials(contributor.name)}
                         </div>
-                        <div className="text-sm text-gray-500">{contributor.email}</div>
-                        {contributor.specialization && contributor.specialization.length > 0 && (
-                          <div className="text-xs text-gray-400 mt-1">
-                            {contributor.specialization.slice(0, 2).join(', ')}
-                            {contributor.specialization.length > 2 && '...'}
+                        <div>
+                          <div className="font-medium text-gray-900">
+                            {contributor.name}
                           </div>
-                        )}
+                          <div className="text-sm text-gray-500">{contributor.email}</div>
+                        </div>
                       </div>
                     </td>
-                    <td className="p-4">
+                    <td className="p-4 hidden lg:table-cell">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getLevelColor(contributor.level)}`}>
-                        {contributor.level || 'Not set'}
+                        {getLevelIcon(contributor.level)} {contributor.level || 'Not set'}
                       </span>
                     </td>
                     <td className="p-4">
                       <div className="text-gray-900 font-medium">{contributor.articlesCount || 0}</div>
-                      <div className="text-sm text-gray-500">{contributor.totalViews?.toLocaleString() || 0} views</div>
+                      <div className="text-sm text-gray-500 hidden sm:block">{contributor.totalViews?.toLocaleString() || 0} views</div>
                     </td>
-                    <td className="p-4">
+                    <td className="p-4 hidden md:table-cell">
                       <div className="text-green-600 font-semibold">
                         {formatCurrency(contributor.totalEarnings || 0)}
                       </div>
                     </td>
                     <td className="p-4">
-                      <div className="text-blue-600 font-medium">
-                        {formatCurrency(contributor.balance || 0)}
-                      </div>
-                    </td>
-                    <td className="p-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(contributor.status)}`}>
-                        {contributor.status}
+                        {getStatusIcon(contributor.status)} <span className="hidden sm:inline ml-1">{contributor.status}</span>
                       </span>
                     </td>
-                    <td className="p-4 text-gray-600 text-sm">
+                    <td className="p-4 text-gray-600 text-sm hidden sm:table-cell">
                       {formatLastActive(contributor.lastActive)}
                     </td>
                     <td className="p-4">
                       <div className="flex space-x-2">
                         <button
                           onClick={() => viewDetails(contributor)}
-                          className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                          className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors"
                         >
                           View
                         </button>
@@ -562,7 +721,7 @@ export default function ManagerContributors() {
                             contributor.status === 'active' ? 'inactive' : 'active'
                           )}
                           disabled={updating === contributor.id}
-                          className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 disabled:opacity-50"
+                          className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 disabled:opacity-50 transition-colors"
                         >
                           {updating === contributor.id ? '...' : contributor.status === 'active' ? 'Deactivate' : 'Activate'}
                         </button>
@@ -573,13 +732,13 @@ export default function ManagerContributors() {
               </tbody>
             </table>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Top Performers Section */}
+      {/* Performance Section */}
       {activeTab === 'performance' && contributors.length > 0 && (
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Earners</h3>
             <div className="space-y-3">
               {[...contributors]
@@ -587,14 +746,14 @@ export default function ManagerContributors() {
                 .sort((a, b) => (b.totalEarnings || 0) - (a.totalEarnings || 0))
                 .slice(0, 5)
                 .map((contributor, index) => (
-                  <div key={contributor.id} className="flex items-center justify-between p-2 border rounded">
-                    <div className="flex items-center">
-                      <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center text-white text-xs font-bold mr-2">
+                  <div key={contributor.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center min-w-0 flex-1">
+                      <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center text-white text-xs font-bold mr-3 flex-shrink-0">
                         {index + 1}
                       </div>
-                      <span className="text-sm font-medium text-gray-900">{contributor.name}</span> {/* ADDED: text-gray-900 */}
+                      <span className="text-sm font-medium text-gray-900 truncate">{contributor.name}</span>
                     </div>
-                    <span className="text-green-600 font-semibold text-sm">
+                    <span className="text-green-600 font-semibold text-sm whitespace-nowrap ml-2">
                       {formatCurrency(contributor.totalEarnings || 0)}
                     </span>
                   </div>
@@ -602,7 +761,7 @@ export default function ManagerContributors() {
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Most Prolific</h3>
             <div className="space-y-3">
               {[...contributors]
@@ -610,14 +769,14 @@ export default function ManagerContributors() {
                 .sort((a, b) => (b.articlesCount || 0) - (a.articlesCount || 0))
                 .slice(0, 5)
                 .map((contributor, index) => (
-                  <div key={contributor.id} className="flex items-center justify-between p-2 border rounded">
-                    <div className="flex items-center">
-                      <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold mr-2">
+                  <div key={contributor.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center min-w-0 flex-1">
+                      <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold mr-3 flex-shrink-0">
                         {index + 1}
                       </div>
-                      <span className="text-sm font-medium text-gray-900">{contributor.name}</span> {/* ADDED: text-gray-900 */}
+                      <span className="text-sm font-medium text-gray-900 truncate">{contributor.name}</span>
                     </div>
-                    <span className="text-blue-600 font-semibold text-sm">
+                    <span className="text-blue-600 font-semibold text-sm whitespace-nowrap ml-2">
                       {contributor.articlesCount} articles
                     </span>
                   </div>
@@ -625,7 +784,7 @@ export default function ManagerContributors() {
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Highest Engagement</h3>
             <div className="space-y-3">
               {[...contributors]
@@ -633,14 +792,14 @@ export default function ManagerContributors() {
                 .sort((a, b) => (b.totalViews || 0) - (a.totalViews || 0))
                 .slice(0, 5)
                 .map((contributor, index) => (
-                  <div key={contributor.id} className="flex items-center justify-between p-2 border rounded">
-                    <div className="flex items-center">
-                      <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold mr-2">
+                  <div key={contributor.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center min-w-0 flex-1">
+                      <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold mr-3 flex-shrink-0">
                         {index + 1}
                       </div>
-                      <span className="text-sm font-medium text-gray-900">{contributor.name}</span> {/* ADDED: text-gray-900 */}
+                      <span className="text-sm font-medium text-gray-900 truncate">{contributor.name}</span>
                     </div>
-                    <span className="text-green-600 font-semibold text-sm">
+                    <span className="text-green-600 font-semibold text-sm whitespace-nowrap ml-2">
                       {contributor.totalViews?.toLocaleString()} views
                     </span>
                   </div>
@@ -657,6 +816,6 @@ export default function ManagerContributors() {
 const InfoRow = ({ label, value }: { label: string; value: string }) => (
   <div>
     <label className="text-sm font-medium text-gray-600">{label}</label>
-    <p className="text-gray-900">{value || 'Not provided'}</p>
+    <p className="text-gray-900 mt-1">{value || 'Not provided'}</p>
   </div>
 );
